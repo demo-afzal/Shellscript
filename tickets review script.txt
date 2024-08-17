@@ -1,0 +1,101 @@
+$ cat unreviewed_tickets.sh
+#!/bin/bash
+year=`date +%Y`
+month=`date +%m`
+day=`date +%d`
+prefixe=$day$month$year
+logfile="/eqx/eqxbil1b/admin/backups/scripts/unreviewed/output_"$prefixe.html
+export ORACLE_HOME=/eqx/eqx_app/oracle/product/19.3
+export ORACLE_SID=BILSVW
+export ORACLE_BIN=${ORACLE_HOME}/bin
+export PATH=$PATH:${ORACLE_BIN}
+
+sqlplus -s 'OPS$D1SVW'/D1SVW@'sv2lxsvwdbd101:1521/D1SVW' <<EOF
+set heading ON
+set trimspool OFF
+set pagesize 500
+SET MARKUP HTML ON
+set feedback off
+spool $logfile
+SELECT   DISTINCT
+           b.ticket_no,
+           SHORT_PROBLEM_SUMMARY,
+           ASSIGNED_SUP_ENGINEER,
+           CALLER,
+           DECODE (REVIEW_IND_CODE, 1, 'Yes', 'No') Reviewed
+    FROM   rg_soc a, rg_ticket_summary b
+   WHERE       a.ticket_no = b.ticket_no
+           AND LOWER (SHORT_PROBLEM_SUMMARY) LIKE  LOWER('%julrel23%')
+           AND a.status <> 3 order by 5;
+spool off;
+exit;
+EOF
+mailx -a $logfile -s "Ticketlist julrel23" ECO_SingleView_Admin@equinix.com SingleviewDevTeam@equinix.com < /dev/null
+
+CLSVW.world=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=sv2lxex8db06-vip)(PORT=1548))(CONNECT_DATA=(SERVICE_NAME=CLSVW)))
+
+
+<Install::E00503> Tickets in the release that have not yet been code reviewed:
+  Ticket          Description                                                                     Review Status  Reviewed By
+  ---------------------------------------------------------------------------------------------------------------------------
+  ESV-4636        [JulRel23] - [Internal] - Modify Asset Load task to not display additional comm Unreviewed
+  ESV-4659        [JunSR23] Add part number column in Asset details report for CPQ Quotes.        Unreviewed
+  ESV-4662        [JunSR23] Changes to handle Brazil ibx in the update request for MS products.   Unreviewed
+  ESV-4666        [JunSR23] Fix the issue of suppressed report not displaying all the selected ac Unreviewed
+  ESV-4668        [JulMMBR23] - Populate Document type during NRC upload for Brazil IBX records   Unreviewed
+  ESV-4669        [JulMMBR23] - BillUI - Order Fallouts - Order Tracker Table dbsync loop error f Unreviewed
+  ESV-4670        [JulMMBR23] - VD Eligible Asset Report (SV & BillUI Integration changes)        Unreviewed
+
+<Install::E00506> Tickets in the release which are missing evidence of unit testing:
+  Ticket          Description
+  ------------------------------------------------------------------------------------------------
+  ESV-4636        [JulRel23] - [Internal] - Modify Asset Load task to not display additional comments in taskoutput
+  ESV-4647        [JunSR23] [RETROFIT of ESV-4642] [SR-1677] Sprint 9 - CPQ Audit Report from Bill-UI
+  ESV-4659        [JunSR23] Add part number column in Asset details report for CPQ Quotes.
+  ESV-4660        [JunSR23] -[SR-1805]  Sprint 11 - Changes to populate IBX as new field
+  ESV-4661        [JunSR23] [SR-1815] Add POE & POF part number columns to CPQ Quotes Asset Detail Audit report.
+  ESV-4662        [JunSR23] Changes to handle Brazil ibx in the update request for MS products.
+  ESV-4665        [JunSR23] -[SR-1833]  Sprint 12 -CPQ Rest API changes to pass env in header
+  ESV-4666        [JunSR23] Fix the issue of suppressed report not displaying all the selected accounts
+  ESV-4668        [JulMMBR23] - Populate Document type during NRC upload for Brazil IBX records
+  ESV-4669        [JulMMBR23] - BillUI - Order Fallouts - Order Tracker Table dbsync loop error fixed
+  ESV-4670        [JulMMBR23] - VD Eligible Asset Report (SV & BillUI Integration changes)
+
+There were validation errors found during the validation phase. Do you want to continue? [yes]
+
+
+
+UAT 4 deployemnt 
+
+<Install::E00503> Tickets in the release that have not yet been code reviewed:
+  Ticket          Description                                                                     Review Status  Reviewed By
+  ---------------------------------------------------------------------------------------------------------------------------
+  ESV-4636        [JulRel23] - [Internal] - Modify Asset Load task to not display additional comm Unreviewed
+  ESV-4659        [JunSR23] Add part number column in Asset details report for CPQ Quotes.        Unreviewed
+  ESV-4662        [JunSR23] Changes to handle Brazil ibx in the update request for MS products.   Unreviewed
+  ESV-4666        [JunSR23] Fix the issue of suppressed report not displaying all the selected ac Unreviewed
+  ESV-4668        [JulMMBR23] - Populate Document type during NRC upload for Brazil IBX records   Unreviewed
+  ESV-4670        [JulMMBR23] - VD Eligible Asset Report (SV & BillUI Integration changes)        Unreviewed
+  ESV-4671        [JunSR23]Function to derive Order_Number                                        Unreviewed
+  ESV-4672        [AugRel23] -[SCEIT-3627,3314]  Sprint 1 - UCM_ID and Future MRC and ED Integrat Unreviewed
+  ESV-4673        [JulMMBR23] BillUI asset details page does not show latest account for Delete*  Unreviewed
+
+<Install::E00506> Tickets in the release which are missing evidence of unit testing:
+  Ticket          Description
+  ------------------------------------------------------------------------------------------------
+  ESV-4636        [JulRel23] - [Internal] - Modify Asset Load task to not display additional comments in taskoutput
+  ESV-4647        [JunSR23] [RETROFIT of ESV-4642] [SR-1677] Sprint 9 - CPQ Audit Report from Bill-UI
+  ESV-4659        [JunSR23] Add part number column in Asset details report for CPQ Quotes.
+  ESV-4660        [JunSR23] -[SR-1805]  Sprint 11 - Changes to populate IBX as new field
+  ESV-4661        [JunSR23] [SR-1815] Add POE & POF part number columns to CPQ Quotes Asset Detail Audit report.
+  ESV-4662        [JunSR23] Changes to handle Brazil ibx in the update request for MS products.
+  ESV-4665        [JunSR23] -[SR-1833]  Sprint 12 -CPQ Rest API changes to pass env in header
+  ESV-4666        [JunSR23] Fix the issue of suppressed report not displaying all the selected accounts
+  ESV-4668        [JulMMBR23] - Populate Document type during NRC upload for Brazil IBX records
+  ESV-4669        [JunSR23] - BillUI - Order Fallouts - Order Tracker Table dbsync loop error fixed
+  ESV-4670        [JulMMBR23] - VD Eligible Asset Report (SV & BillUI Integration changes)
+  ESV-4671        [JunSR23]Function to derive Order_Number
+  ESV-4672        [AugRel23] -[SCEIT-3627,3314]  Sprint 1 - UCM_ID and Future MRC and ED Integration with DIH
+  ESV-4673        [JulMMBR23] BillUI asset details page does not show latest account for Delete* orders
+
+There were validation errors found during the validation phase. Do you want to continue? [yes]

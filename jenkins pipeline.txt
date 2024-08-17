@@ -1,0 +1,261 @@
+pipeline {
+       parameters {
+           choice(name: 'ENVIRONMENT_NAME',  choices: ['DEV', 'DI1','DI3','DI4','SIT1','BILLTEST','CLONE', 'UAT1_1', 'UAT1_2', 'UAT1_3', 'UAT1_4', 'UAT2', 'UAT4','DMG4', 'CONV5', 'TRG1','PROD_1','PROD_2','PROD_3','PROD_4','CONV4'], description: 'Select Environment')
+       choice(name: 'ACTION', choices: ['Build Only','Build & Deploy', 'Restart','BillUI Database changes','Stop','Quality Check', "Restart Sonar Server", "Restart Redis","Start Redis","Stop Redis"], description: 'Select Action')
+           string(name: 'CLUSTER_SIZE', defaultValue: "1", description: 'Use this for multiple apps in single instance. Http and Ajp ports will be increase by 1')
+           string(name: 'JVM_PARAMS', defaultValue: "-Djavax.net.ssl.trustStore=./back-end-v2/certs/singleviewkeystore.jks -Xms512M  -Xmx8G  -Dtomcat.ajp.enabled=true -Dlog4j2.formatMsgNoLookups=true ", description: 'Jvm parameters')
+           string(name: 'SONAR_SERVER', defaultValue: "http://sv2lxbuiwsdev01.corp.equinix.com:9100", description: 'SonarQube Host')
+
+    }
+
+   agent {
+        node {
+            label "${params.ENVIRONMENT_NAME}"
+            customWorkspace "/opt/uitool/code/BILLINGUI"
+            }
+        }
+    tools {
+        maven 'maven-3.6.3'
+    }
+
+
+    stages {
+           stage('Quality Check') {
+                      when {
+                expression {
+                    return (params.ACTION == 'Build & Deploy') || (params.ACTION == 'Quality Check');
+                    }
+                }
+            stages {
+
+                stage('Validate Backend') {
+                    steps {
+                            echo 'Building back'
+                            sh "mvn -f ./back-end-v2/pom.xml clean initialize"
+                                                        withSonarQubeEnv('sonarqube-container') {
+                                                     sh "mvn -f ./back-end-v2/pom.xml verify sonar:sonar -Dsonar.host.url=${params.SONAR_SERVER}  -Dsonar.projectKey=billui-backend -Dsonar.login=admin -Dsonar.password=billui"
+                                                        }
+
+                        }
+                }
+                stage('Validate Frontend') {
+                    steps {
+                            echo 'Building front'
+                            sh 'npm install --prefix ./front-end'
+                                                        withSonarQubeEnv('sonarqube-container') {
+                             sh "npm run --prefix ./front-end sonar -- -Dsonar.host.url=${params.SONAR_SERVER} -Dsonar.projectKey=billui-frontend -Dsonar.login=admin -Dsonar.password=billui"
+                                                        }
+                        }
+                 }
+                            stage("Quality Gate") {
+                                        steps {
+                                              timeout(time: 5, unit: 'MINUTES')
+                                                    {
+                                                      waitForQualityGate abortPipeline: false
+                                                }
+                                            }
+                            }
+
+
+
+                                }
+        }
+
+        stage('Build') {
+                      when {
+                expression {
+                    return (params.ACTION == 'Build & Deploy') || (params.ACTION == 'Build Only');
+                    }
+                }
+            parallel {
+
+                stage('Build Backend') {
+                    steps {
+                            echo 'Building back'
+                            sh 'mvn -f ./back-end-v2/pom.xml initialize'
+                            sh 'mvn -f ./back-end-v2/pom.xml clean install -DskipTests'
+                        }
+                }
+                stage('Build Frontend') {
+                    steps {
+                            echo 'Building front'
+                            sh 'npm install --prefix ./front-end'
+                            sh 'npm run --prefix ./front-end build:prod'
+                        }
+                 }
+            }
+        }
+        stage('Test') {
+                         when {
+                expression {
+                    return (params.ACTION == 'Build & Deploy') || (params.ACTION == 'Build Only');
+                    }
+                }
+            parallel {
+                stage('Test Backend') {
+                    steps {
+                            echo 'Testing back'
+
+                        }
+                }
+                stage('Test Frontend') {
+                    steps {
+                            echo 'Testing front'
+                        }
+                 }
+            }
+        }
+                stage('Apply Database changes') {
+                         when {
+                expression {
+                    return (params.ACTION == 'BillUI Database changes') || (params.ACTION == 'Build & Deploy') ;
+                    }
+                }
+            parallel {
+                stage('Apply changes') {
+                    steps {
+                         withCredentials([string(credentialsId: 'MIGRATION_PASS', variable: 'MIGRATION_PASS')]) {
+                                                   script {
+                                                                def datas = readYaml file: "./back-end-v2/billui-config/${params.ENVIRONMENT_NAME.toLowerCase()}/application-${params.ENVIRONMENT_NAME.toLowerCase()}.yml"
+                                                                def params="-Dliquibase.url=${datas.spring['billui-datasource'].jdbcUrl} -Dliquibase.username=${datas.spring['billui-datasource'].username} -Dliquibase.password=${MIGRATION_PASS} -Dliquibase.contexts=${params.ENVIRONMENT_NAME.toLowerCase()}"
+                                                                sh 'mvn -f ./back-end-v2/pom.xml initialize'
+                                                                sh "mvn -f ./back-end-v2/billui-core/pom.xml install -DskipTests"
+                                                                sh "mvn $params -f ./back-end-v2/billui-core/pom.xml liquibase:updateSQL"
+                                                                sh "mvn $params -f ./back-end-v2/billui-core/pom.xml liquibase:update"
+                                                         }
+                                                }
+
+                        }
+                }
+                stage('Send notification') {
+                    steps {
+                            echo 'TODO - send email notification to DBA'
+
+                        }
+                 }
+            }
+        }
+        stage('Start') {
+                         when {
+                expression {
+                    return (params.ACTION == 'Build & Deploy') || (params.ACTION == 'Restart');
+                    }
+                }
+
+                    stages {
+                       stage('Stop Backend process') {
+                           steps {
+                                   echo 'Stopping backend process'
+                                   sh "chmod 755 ./*.sh"
+                                   sh "./stop.sh ${params.ENVIRONMENT_NAME.toLowerCase()}"
+                                    }
+                                }
+                        stage('Start backend process') {
+                            steps {
+                                 withCredentials([string(credentialsId: 'SSL_PASSWORD', variable: 'SSL_PASSWORD')]) {
+                                    sh "echo 'Starting backend process- $ENVIRONMENT_NAME'"
+                                    withEnv(['JENKINS_NODE_COOKIE=dontkill']) {
+                                            sh "chmod +x ./start.sh && (./start.sh ${params.ENVIRONMENT_NAME.toLowerCase()} ${SSL_PASSWORD} ${params.CLUSTER_SIZE} \"${params.JVM_PARAMS}\")"
+                                        }
+                                    }
+                            }
+                        }
+                    }
+
+            }
+                stage('Stop') {
+                         when {
+                expression {
+                    return (params.ACTION == 'Stop');
+                    }
+                }
+
+                    stages {
+                       stage('Stop Backend process') {
+                           steps {
+                                   echo 'Stopping backend process'
+                                   sh "chmod 755 ./*.sh"
+                                   sh "./stop.sh ${params.ENVIRONMENT_NAME.toLowerCase()}"
+                                    }
+                                }
+                    }
+
+            }
+                 stage('Restart Sonar Server') {
+                         when {
+                expression {
+                    return (params.ACTION == 'Restart Sonar Server');
+                    }
+                }
+
+             stages {
+                 stage('Starting Sonar Server') {
+                    steps {
+                        withCredentials([string(credentialsId: 'MIGRATION_PASS', variable: 'MIGRATION_PASS')]) {
+                                                   script {
+                                                                def params="-e SONAR_DRIVER_CLASS_NAME=oracle.jdbc.OracleDriver -e SONAR_JDBC_URL=jdbc:oracle:thin:@sv2axsvwdbd201.corp.equinix.com:1521:D2SVW -e SONAR_JDBC_USERNAME=BUI_SONARQUBE -e SONAR_JDBC_PASSWORD=${MIGRATION_PASS}"
+                                                                sh "sudo docker volume create --name sonarqube_data && sudo docker volume create --name sonarqube_logs && sudo docker volume create --name sonarqube_extensions"
+                                sh 'sudo docker stop $(sudo docker ps -a -q --filter ancestor=sonarqube --format="{{.ID}}")'
+                                sh "sudo docker run -d -p 9100:9000 $params -v sonarqube_data:/opt/sonarqube/data -v sonarqube_extensions:/opt/sonarqube/extensions -v sonarqube_logs:/opt/sonarqube/logs sonarqube"
+                               }
+                                                         }
+                                            }
+                       }
+              }
+
+            }
+        stage('Stop redis') {
+                         when {
+                expression {
+                    return (params.ACTION == 'Stop Redis') || (params.ACTION == 'Restart Redis');
+                    }
+                }
+
+                    stages {
+                       stage('Restart Redis process') {
+                           steps {
+                                   echo 'Stroping Redis'
+                                                                   sh "ps aux | grep 'redis-server' | awk '{print \$2}' | xargs sudo kill -9"
+                                                                   sh "ps aux | grep 'redis-sentinel' | awk '{print \$2}' | xargs sudo kill -9"
+                                    }
+                                }
+                    }
+
+            }
+
+
+                 stage('Start redis') {
+                         when {
+                expression {
+                    return (params.ACTION == 'Restart Redis') || (params.ACTION == 'Start Redis');
+                    }
+                }
+
+                    stages {
+                       stage('Restart Redis process') {
+                           steps {
+                                                                   echo 'Start Redis '
+                                   sh "sudo /eqx/uitool/redis-5.0.9/src/redis-server redis.conf --protected-mode no &"
+                                   sh "sudo /eqx/uitool/redis-5.0.9/src/redis-server sentinel.conf --sentinel --protected-mode no &"
+                                    }
+                                }
+                    }
+
+            }
+
+
+
+    }
+
+    post {
+        failure {
+            emailext (
+                subject: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
+                body: """<p>FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]':</p>
+                    <p>Check console output at &QUOT;<a href='${env.BUILD_URL}'>${env.JOB_NAME} [${env.BUILD_NUMBER}]</a>&QUOT;</p>""",
+                recipientProviders: [[$class: 'DevelopersRecipientProvider']]
+            )
+        }
+    }
+
+}

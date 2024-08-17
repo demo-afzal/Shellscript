@@ -1,0 +1,619 @@
+ cat eqx_auto_refresh.sh
+#---------------------------------------------------------------------------
+#
+#   File:       eqx_auto_refresh.sh
+#   Created:    10-Jan-2018 03:01:10
+#   Creator:    tgovinda  ()
+#   $Revision:$
+#   $Id:$
+#
+# ===========================================================================
+# COPYRIGHT (C) 2018 CSG SYSTEMS INTERNATIONAL, INC. AND/OR ITS
+# AFFILIATES ("CSG INTERNATIONAL"). ALL RIGHTS RESERVED. THE INFORMATION
+# CONTAINED WITHIN THIS DOCUMENT OR APPLICATION IS THE PROPERTY OF CSG
+# INTERNATIONAL, WHICH IS CONFIDENTIAL AND PROTECTED BY INTERNATIONAL
+# COPYRIGHT LAWS AND ANY UNAUTHORISED USE OF THIS DOCUMENT OR APPLICATION
+# OR ITS CONTENTS MAY VIOLATE COPYRIGHT, TRADEMARK, AND OTHER LAWS. NO
+# PART OF THIS DOCUMENT OR APPLICATION MAY BE PHOTOCOPIED, REPRODUCED
+# OR TRANSLATED IN ANY FORM OR BY ANY MEANS, OR STORED IN A RETRIEVAL
+# SYSTEM OR TRANSMITTED ELECTRONICALLYOR OTHERWISE, WITHOUT THE PRIOR
+# WRITTEN CONSENT OF CSG INTERNATIONAL.
+# ===========================================================================
+#
+# USAGE:
+#   eqx_auto_refresh
+#
+# DESCRIPTION:
+#  Script for DBA and App. refresh.
+#
+# EXIT STATUS:
+#   0   - Succeeded
+#   1   - Error (+ Description)
+#   2   - Usage
+#
+# REVISION HISTORY:
+#   $Log:$
+#
+#---------------------------------------------------------------------------
+
+$DEBUG                          # Allows DEBUG="set -x" for tracing
+Procedure=`basename $0` # Protect the procedure name from set()
+
+
+#---------------------------------------------------------------------------
+#       Local Shell Functions
+#---------------------------------------------------------------------------
+
+Shell_function() {
+        :
+}
+
+
+#---------------------------------------------------------------------------
+#       Main Code
+#---------------------------------------------------------------------------
+
+# Check for the number of parameters passed
+echo $#
+if [ $# -ne 3 ]
+then
+echo Usage '$0 CLSVW|TARGETDB SOURCEDB CTL_FILE'
+exit
+else
+
+# Export the details fetched from arguments
+
+export CTL_FILE=$3
+export DBNAME=$1
+export apphost=`hostname`
+export user=`whoami`
+# Export variables from control file
+
+export DB_HOSTNAME=`cat $CTL_FILE|grep db_instance|awk -F"=" '{print $2}'`
+
+echo "The DB_HOSTNAME is $DB_HOSTNAME\n"
+
+export LICENCE_NAME=`cat $CTL_FILE|grep licence_file|awk -F"=" '{print $2}'`
+
+echo "The LICENCE_NAME is $LICENCE_NAME\n"
+
+export dbhost='oracle@'$DB_HOSTNAME
+export SCRIPT_TOP=/home/oracle/CLONE/BILL
+export SPASS=`cat $CTL_FILE|grep system_pwd|awk -F"=" '{print $2}'`
+export ENV_FILE=`cat $CTL_FILE|grep ora_env_file |awk -F"=" '{print $2}'`
+export NEW_PASS=`cat $CTL_FILE|grep new_pass |awk -F"=" '{print $2}'`
+
+
+
+#There are production servers and we should have checks to make sure that the script is not run across prod
+
+if [[ ${apphost} == 'sv2lxsvwas01*' ]] || [[ ${apphost} == 'sv2lxsvwas02*' ]] || [[ ${apphost} == 'ch3lxsvwas01*' ]] || [[ ${apphost} == 'ch3lxsvwas02*' ]];
+then
+ echo "You are trying to connect to PROD Application server, please verify and correct the configuration ";
+ exit
+fi
+
+#second verification to make sure prod is not in use
+case $apphost in
+sv2lxsvwas01*|sv2lxsvwas02*|ch3lxsvwas01*|ch3lxsvwas02*)   echo " It's PROD and I don't want you to take chances";
+        exit
+        ;;
+esac
+
+echo "Database name is $DBNAME"
+
+#
+# Inform users logged in SV of shutdown
+#
+ecp "biWall&('Singleview is going down for a refresh in 5 minutes. All the data will be refreshed from Production. Please exit and close the clients. Thanks. -Dimi')"
+echo "Waiting for users to log off before shutting down. Will continue in 5 minutes."
+sleep 3
+
+#Taking original wallets backup
+export REFRESH_FILES_WALLET_DIR=/eqx/`whoami`/refresh_files/wallets_bkp
+cp -f $ATA_DATA_SERVER_CONFIG/tnsnames.ora $REFRESH_FILES_WALLET_DIR/tnsnames.ora_wallets
+#cp -f $ATA_DATA_SERVER_CONFIG/tnsnames.ora $REFRESH_FILES_WALLET_DIR/tnsnames.ora_nowallets
+cp -f $ATA_DATA_SERVER_CONFIG/sqlnet.ora $REFRESH_FILES_WALLET_DIR/sqlnet.ora_wallets
+
+#
+# Shutdown Singleview and clean pending/running servers
+#
+sv_stop
+sv_stop -k
+billing_clean $ENVIRONMENT_NAME -r -F
+billing_clean $ENVIRONMENT_NAME -r -F
+
+# Above script will return 3 line $?  may have multiple values , need to see how we can validate it better
+cleanrc=$?
+if [ $cleanrc -gt 0 ]; then
+echo "Error: Unable to clean billing"
+exit 1;
+fi
+
+#
+# Load variables for DB refresh
+#
+#export ATADBACONNECT='OPS$PRDSVWDB'/Noisy3Security
+#export ATASVRCONNECT='PRDSVWDB_SVR'/Noisy3Security
+
+echo "$ATADBACONNECT"
+echo "$ATASVRCONNECT"
+
+
+#
+# Check which database you are trying to refresh, abort if PROD
+#
+
+db_name=`cat $TNS_ADMIN/tnsnames.ora | egrep 'sv2axsvwdb01|sv2axsvwdb02|sv2axsvwdbrf01|ch3axsvwdb01|PRDSVW|PRODSVW'|wc -l`
+
+if [ $db_name -gt 0 ];
+then
+echo "tnsnames.ora has PROD entry, please check and correct it"
+exit
+else
+echo "tnsnames.ora is clean (no PROD server found)";
+fi
+
+#
+# Start database refresh
+#
+###Uncomment to run DB refresh
+#ssh oracle@sv2lxex8db07-mgt.corp.equinix.com "sh /home/oracle/rman_clone_billsvw.sh"
+
+#ssh $dbhost "$SCRIPT_TOP/new_clone_dbaix_ap.sh $NEW_PASS blank /home/oracle/CLONE/BILL/$CTL_FILE $SCRIPT_TOP /u01/app12c/oracle/product/12.1.0/dbhome_1/$DBNAME.env"
+
+#
+# Exit if there is an Error on DB side
+# [Rajini] updated start
+#
+var=`sqlplus -s TPSYSADM/welcometp9 <<EOF
+exit;
+EOF`
+var1=`echo $var | grep ORA | wc -l`
+if [ "$var1" -gt 0 ];
+then
+   echo $var
+   echo "****[ALERT]*** DB refresh has an issue, please check with DBA team"
+   exit;
+fi
+
+echo "***DB is up and running***"
+echo "Connecting with ATASVRCONNECT"
+var=`sqlplus -s $ATASVRCONNECT <<EOF
+exit;
+EOF`
+var1=`echo $var | grep ORA | wc -l`
+if [ "$var1" -gt 0 ];
+then
+   echo $var
+   echo "***[ALERT]*** Reset PASSWORD for ATASVRCONNECT"
+   exit;
+fi
+echo "Connecting with ATADBACONNECT"
+var=`sqlplus -s $ATADBACONNECT <<EOF
+exit;
+EOF`
+var1=`echo $var | grep ORA | wc -l`
+if [ "$var1" -gt 0 ];
+then
+   echo $var
+   echo "****[ALERT]*** Reset PASSWORD for ATADBACONNECT"
+   exit;
+fi
+
+echo "***DB connection is healthy***"
+#[Rajini] Updated Ended
+sleep 10
+echo "DB refresh completed, proceeding with Singleview Post Steps"
+
+#################################################################################################################
+### Post Refresh Script
+#################################################################################################################
+
+#
+# rsync the filesystem - MAKE SURE TNSNAMES.ORA IS NOT FROM PROD
+#
+case $apphost in
+sv2*)
+rsync -avr --delete -e ssh --exclude="log.old/" --exclude="tnsnames.ora" --exclude="*.keytab" --exclude="*.conf" --exclude="log/" --exclude="wallet.*/"  --exclude="sqlnet.ora" --exclude="wallets/" --exclude="TUXCONFIG" --exclude="queue/" --exclude="wallet.sv2lxsvwasdi01/"  eqxprd1b@sv2lxsvwas02:/eqx/eqxprd1b/data /eqx/$USER/
+
+if [ $? -ne 0 ]; then
+       echo "rsync [data] has an issue , please check."
+       scp $path1/mailbody.txt eqxbil1b@sv2lxsvwapbil01:/eqx/eqxbil1b/admin/backups
+fi
+
+rsync -avr --delete -e ssh eqxprd1b@sv2lxsvwas02:/eqx/eqxprd1b/imp /eqx/$USER/
+
+if [ $? -ne 0 ]; then
+       echo "rsync [imp] has an issue , please check."
+       scp $path1/mailbody.txt eqxbil1b@sv2lxsvwapbil01:/eqx/eqxbil1b/admin/backups
+fi
+
+rsync -avr --delete -e ssh --exclude="backups" eqxprd1b@sv2lxsvwas02:/eqx/eqxprd1b/admin /eqx/$USER/admin
+
+if [ $? -ne 0 ]; then
+       echo "rsync [admin] has an issue , please check."
+       scp $path1/mailbody.txt eqxbil1b@sv2lxsvwapbil01:/eqx/eqxbil1b/admin/backups
+fi
+;;
+ch3*)
+rsync -avr --delete -e ssh --exclude="log.old/" --exclude="tnsnames.ora" --exclude="*.keytab" --exclude="*.conf" --exclude="log/" --exclude="wallet.*/" --exclude="sqlnet.ora" --exclude="wallets/" --exclude="TUXCONFIG" --exclude="queue/" eqxprd1b@ch3lxsvwas01:/eqx/eqxprd1b/data /eqx/$USER/
+
+if [ $? -ne 0 ]; then
+       echo "rsync [data] has an issue , please check."
+       scp $path1/mailbody.txt eqxbil1b@sv2lxsvwapbil01:/eqx/eqxbil1b/admin/backups
+fi
+
+rsync -avr --delete -e ssh eqxprd1b@ch3lxsvwas01:/eqx/eqxprd1b/imp /eqx/$USER/
+
+if [ $? -ne 0 ]; then
+       echo "rsync [imp] has an issue , please check."
+       scp $path1/mailbody.txt eqxbil1b@sv2lxsvwapbil01:/eqx/eqxbil1b/admin/backups
+fi
+
+rsync -avr --delete -e ssh --exclude="backups" eqxprd1b@ch3lxsvwas01:/eqx/eqxprd1b/admin /eqx/$USER/admin
+
+if [ $? -ne 0 ]; then
+       echo "rsync [admin] has an issue , please check."
+       scp $path1/mailbody.txt eqxbil1b@sv2lxsvwapbil01:/eqx/eqxbil1b/admin/backups
+fi
+;;
+*)
+echo "Something wrong"
+esac
+
+
+
+#
+# Make sure these folders are created
+#
+mkdir -p $ATA_DATA_SERVER_LOG/reports; mkdir -p $ATA_DATA_SERVER_LOG/audit; mkdir -p $ATA_DATA_SERVER_LOG/recon; mkdir -p $ATA_BASE/admin/hotfixes; mkdir -p $ATA_BASE/admin/releases;
+
+#Copy original wallets files from the backup one
+export REFRESH_FILES_WALLET_DIR=/eqx/`whoami`/refresh_files/wallets_bkp;
+cp -f $REFRESH_FILES_WALLET_DIR/tnsnames.ora_wallets $ATA_DATA_SERVER_CONFIG/tnsnames.ora
+cp -f $REFRESH_FILES_WALLET_DIR/sqlnet.ora_wallets $ATA_DATA_SERVER_CONFIG/sqlnet.ora
+
+echo "$ATADBACONNECT"
+echo "$ATASVRCONNECT"
+#
+# Load SV licence
+#
+sv_loadlicence -xmlfile $ATA_BASE/svlicence.xml
+
+
+#
+# Drop PROD DB links - EBS and SIEBEL
+##
+sqlplus $ATADBACONNECT <<EOF
+drop public database link ebs;
+drop public database link siebel;
+drop public database link revpro;
+drop PUBLIC database link VTXREP;
+drop PUBLIC database link SV_UAT4;
+drop PUBLIC database link TIBCOPRD;
+drop PUBLIC database link IB;
+drop PUBLIC database link SV_QAREAD_CONV1;
+drop PUBLIC database link QAREAD_SVSIT1;
+drop PUBLIC database link SV_BILL;
+drop PUBLIC database link EBS_SIT1;
+drop PUBLIC database link SIEBEL_03;
+drop PUBLIC database link IBAPCLONE;
+drop PUBLIC database link EBS_BILL;
+drop PUBLIC database link SV_CLONE;
+drop public database link billui_bill;
+drop PUBLIC database link CLQOS;
+EOF
+
+# I need to ad script to create dblinks - TG
+#
+# Recreate the DB links
+#
+sqlplus -s $ATADBACONNECT @${ATA_BASE}/work/`whoami`/CLONE/BILL/db_link.sql
+
+
+#
+# Resync database and filesystem
+#
+atai_dbrebuild -r
+chmod 755 $ATA_HOME/imp/rel/server/config/atai_create_grants.sql
+cp -f $ATA_HOME/refresh_files/atai_create_grants.sql $ATA_HOME/imp/rel/server/config
+dbsync;dbsync;dbsync
+
+
+#
+# Reset sequences
+#
+atai_check_seq
+
+
+#
+# Copy new ubbconfig file with more trerodb COMMON servers
+#
+#cp -f $ATA_BASE/refresh_files/ubbconfig.tpl_moreCommon $ATA_DATA_SERVER_CONFIG/ubbconfig.tpl
+
+sv_gencfg
+
+#
+# Clean instance
+#
+billing_clean $ENVIRONMENT_NAME -r -F
+
+#
+# Clean up the upload task
+#
+sched_load -f $ATA_BASE/refresh_files/upload1.ini -update
+sched_load -f $ATA_BASE/refresh_files/recon2_stop.ini -update
+
+
+#
+# Grant few selects that dbsync drops above
+#
+sqlplus $ATADBACONNECT <<EOF
+grant SELECT on SEQ_P_EQX_NE_UNIQUE_ID to PRDSVWDB_SVR;
+#grant SELECT on EQX_CHARGE_EXTRACT_DETAIL to AABDELSHAKOUR;
+#grant SELECT on EQX_RP_UB_CHARGE_EXTRACT to AABDELSHAKOUR;
+grant select on EQX_CHARGE_EXTRACT_DETAIL to MTSE;
+grant SELECT on EQX_SV_ASSETS_V to SIEBEL_SV_USER;
+grant SELECT on PRODUCT_INSTANCE_HISTORY to SIEBEL_SV_USER;
+grant SELECT on REFERENCE_CODE to SIEBEL_SV_USER;
+grant SELECT on SERVICE_DA_ARRAY to SIEBEL_SV_USER;
+grant all on EQX_RAMP_NOTIFICATIONS to PRDSVWDB_SVR;
+grant all on EQX_MC_CUSTOMERS to PRDSVWDB_SVR;
+grant select on service_da_array to tibco_int;
+grant select on derived_attribute_array to siebel_sv_user;
+alter user etlread identified by etlread;
+grant select on "SIEBEL_SV_USER"."EQX_BILL_AGREEMENT_SUMMARY_MV" to mtse;
+grant select on "SIEBEL_SV_USER"."EQX_BILL_AGREEMENT_DETAIL_MV" to mtse;
+grant select on customer_node_da_array to siebel_sv_user;
+grant select on charge to siebel_sv_user;
+create public synonym customer_node_da_array for customer_node_da_array;
+EOF
+
+#
+# Execute atai scripts
+#
+sqlplus -s $ATADBACONNECT @$ATAI_REL_SERVER_CONFIG/atai_create_grant_svr.sql
+sqlplus -s $ATADBACONNECT @$ATAI_REL_SERVER_CONFIG/atai_grant_select_svrconnect.sql
+sqlplus -s $ATADBACONNECT @$ATAI_REL_SERVER_CONFIG/atai_create_grant_to_svrconnect.sql
+
+
+#
+# Fix BR id if higher in EBS
+#
+EBSBRID=`sqlplus -s $ATADBACONNECT <<EOF
+set linesize 900
+set feedback off
+set timing off
+set head off
+column x format 999
+
+select max(bill_run_id) from eqx_ar_sv_ebs_lines_stg@ebs where bill_run_id < 111111111;
+EOF`
+
+echo "EBS BR ID is: $EBSBRID"
+
+SVBRID=`sqlplus -s $ATADBACONNECT <<EOF
+set linesize 900
+set feedback off
+set timing off
+set head off
+column x format 999
+
+select max(bill_run_id) from eqx_charge_extract_detail;
+EOF`
+
+echo "SV BR ID is: $SVBRID"
+
+if [ $EBSBRID -gt $SVBRID ]; then
+echo "EBS BR id is higher than SV, updating the value in SV now\n"
+
+NEWSVBRID=$((EBSBRID + 1))
+
+atai_check_seq -t BILL_RUN -s $NEWSVBRID
+
+sqlplus $ATADBACONNECT <<EOF
+select SEQ_BILL_RUN.nextval from dual;
+EOF
+fi
+
+#
+# Kill the pending Recon1 automation tasks
+#
+sqlplus $ATADBACONNECT << EOF
+update task_queue set task_status_code=7 , task_status_reason_code=11
+where task_queue_id in (SELECT t.task_queue_id
+FROM task_queue t,
+     SCHEDULE s
+WHERE s.schedule_name LIKE '%Automat%'
+AND t.schedule_id     =s.schedule_id
+AND t.task_status_code=1);
+EOF
+
+sqlplus $ATADBACONNECT << EOF
+update task_queue set task_status_code=7 , task_status_reason_code=11
+where task_queue_id in (SELECT t.task_queue_id
+FROM task_queue t, SCHEDULE s
+WHERE s.schedule_name not LIKE '%Admin:%'
+AND s.schedule_name not LIKE'EQX Bill Cycle_01'
+AND s.schedule_name not LIKE '%Measurement%'
+AND t.schedule_id=s.schedule_id
+AND t.task_status_code=1);
+EOF
+
+sqlplus $ATADBACONNECT << EOF
+update schedule set SCHEDULE_STATUS_CODE=2
+where
+SCHEDULE_STATUS_CODE=1
+and schedule_name not LIKE '%Admin:%'
+and schedule_name not LIKE 'EQX Bill Cycle_01'
+AND schedule_name not LIKE '%Measurement%';
+EOF
+
+
+sqlplus $ATADBACONNECT << EOF
+update task_queue set task_status_code=7 , task_status_reason_code=11
+where task_queue_id in (SELECT t.task_queue_id
+FROM task_queue t, SCHEDULE s
+WHERE s.schedule_name LIKE '%Admin: Full DVP%'
+AND t.schedule_id=s.schedule_id
+AND t.task_status_code=1);
+EOF
+
+sqlplus $ATADBACONNECT << EOF
+update task_queue set task_status_code=7 , task_status_reason_code=11
+WHERE   task_queue_id IN
+(SELECT   t.task_queue_id
+FROM   task_queue t, SCHEDULE s
+WHERE       s.schedule_name LIKE '%Recon 2%'
+AND t.schedule_id = s.schedule_id
+AND t.task_status_code = 1);
+commit;
+EOF
+
+#
+##Change the password
+#
+#export ATADBACONNECT='OPS$PRDSVWDB'/Noisy3Security
+#export ATASVRCONNECT='PRDSVWDB_SVR'/Noisy3Security
+sqlplus -s $ATADBACONNECT<<EOF
+@$ATA_BASE/refresh_files/fix_prod.sql
+EOF
+echo "Reset the BILLTEST OPS$PRDSVWDB password , plese check"
+
+export ATADBACONNECT=/@${ORACLE_SID}
+export ATASVRCONNECT=/@${ORACLE_SID}_SVR
+export ATALIMCONNECTCB=/@${ORACLE_SID}_LIM
+export ATALIMCONNECTPE=/@${ORACLE_SID}_LIM
+export ATATMSCONNECT="SqlNet=${ORACLE_SID}_SVR+Acc=P//"
+export ATATMSLIMCONNECT="SqlNet=${ORACLE_SID}_LIM+Acc=P//"
+export ATATMSDBACONNECT="SqlNet=${ORACLE_SID}+Acc=P//"
+
+cp -f $REFRESH_FILES_WALLET_DIR/sqlnet.ora_wallets $ATA_DATA_SERVER_CONFIG/sqlnet.ora
+#Start SSL client setup
+cp -f $REFRESH_FILES_WALLET_DIR/ubbconfig.tpl $ATA_DATA_SERVER_CONFIG/ubbconfig.tpl
+mkdir -p $ATA_DATA_SERVER_CONFIG/wallet.$HOST
+#cp -f $REFRESH_FILES_WALLET_DIR/wallet.sv2lxsvwapbil01/*.* $ATA_DATA_SERVER_CONFIG/wallet.sv2lxsvwapbil01/
+cp -f $REFRESH_FILES_WALLET_DIR/wallet.$HOST/*.* $ATA_DATA_SERVER_CONFIG/wallet.$HOST
+##End of SSL client
+
+cp -f $REFRESH_FILES_WALLET_DIR
+echo "$ATASVRCONNECT"
+echo "$ATADBACONNECT"
+rm -f $ATA_DATA_SERVER_CONFIG/*.sok
+#Create krb5.conf file
+cat <<EOS > $ATA_DATA_SERVER_CONFIG/krb5.conf
+[libdefaults]
+default_realm = GLOBAL.EQUINIX.COM
+default_keytab_name=FILE:/eqx/$USER/data/server/config/$HOST.keytab
+default_tgs_enctypes = aes256-cts-hmac-sha1-96
+default_tkt_enctypes = aes256-cts-hmac-sha1-96
+permitted_enctypes = aes256-cts-hmac-sha1-96
+dns_lookup_kdc = false
+dns_lookup_realm = false
+
+[logging]
+default=FILE:/eqx/$USER/data/server/log/krb5lib.log
+
+[realms]
+GLOBAL.EQUINIX.COM = {
+default_domain = GLOBAL.EQUINIX.COM
+kdc = GLOBAL.EQUINIX.COM
+}
+
+[domain_realm]
+.global.equinix.com = GLOBAL.EQUINIX.COM
+global.equinix.com = GLOBAL.EQUINIX.COM
+EOS
+
+#Update licence config:
+cfg LICENCE1 KERBEROS_REALM -v 'GLOBAL.EQUINIX.COM'
+cfg LICENCE1 KERBEROS_SERVICE -v 'authsvr@'$HOSTNAME'.corp.equinix.com'
+
+
+
+sleep 15
+#Create krb5.conf file
+cat <<EOS > $ATA_DATA_SERVER_CONFIG/krb5.conf
+[libdefaults]
+default_realm = GLOBAL.EQUINIX.COM
+default_keytab_name=FILE:/eqx/$USER/data/server/config/$HOST.keytab
+default_tgs_enctypes = aes256-cts-hmac-sha1-96
+default_tkt_enctypes = aes256-cts-hmac-sha1-96
+permitted_enctypes = aes256-cts-hmac-sha1-96
+dns_lookup_kdc = false
+dns_lookup_realm = false
+
+[logging]
+default=FILE:/eqx/$USER/data/server/log/krb5lib.log
+
+[realms]
+GLOBAL.EQUINIX.COM = {
+default_domain = GLOBAL.EQUINIX.COM
+kdc = GLOBAL.EQUINIX.COM
+}
+
+[domain_realm]
+.global.equinix.com = GLOBAL.EQUINIX.COM
+global.equinix.com = GLOBAL.EQUINIX.COM
+EOS
+
+#Update licence config:
+cfg LICENCE1 KERBEROS_REALM -v 'GLOBAL.EQUINIX.COM'
+cfg LICENCE1 KERBEROS_SERVICE -v 'authsvr@'$HOSTNAME'.corp.equinix.com'
+cfg EQX_SV_CPQ_INTERFACE1 SKIP_FLAG -v 1;
+#
+# Start the CB instance
+#
+#sv_start -parallel 12
+sv_start
+
+sleep 30
+
+#
+# Temporary step -- when issue with STD is resolved this needs to be removed
+#
+#ecp "biStdStart&(1)"
+#ecp "biTrerestInStart&(1)";
+
+
+# Reset SFTP non-prod dEQX_FTS_FileTranferMapping
+da_load_tre -o -s $ATA_BASE/refresh_files/dEQX_FTS_FileTranferMapping_NonProd.csv 80012275
+cfg -f $ATA_BASE/refresh_files/EQX_SV_SFTP_DETAILS1.csv
+# additional configuration to improve BR perfromance
+#cfg -f $ATA_BASE/refresh_files/BR_EROs.ini
+#cfg -f $ATA_BASE/refresh_files/BR_ERTs.ini
+#cfg -f $ATA_BASE/refresh_files/BR_ENMs.ini
+#cfg ENM 1 ERT_PROCESS_LIST -v '1,16,17'
+#cfg ENM 13 ERT_PROCESS_LIST -v '10,18,19'
+#cfg ENM 14 ERT_PROCESS_LIST -v '11,20,21'
+#cfg ENM 15 ERT_PROCESS_LIST -v '12,22,23'
+#cfg ENM 16 ERT_PROCESS_LIST -v '13,24,25'
+#cfg ENM 17 ERT_PROCESS_LIST -v '14,26,27'
+#cfg ENM 18 ERT_PROCESS_LIST -v '15,28,29'
+#cfg -f $ATA_BASE/refresh_files/BR_RGP1.ini
+#cfg -f $ATA_BASE/refresh_files/BR_BGP1.ini
+
+#
+# Add the last refresh message on login screen
+#
+da_load $ATA_BASE/refresh_files/dsil_client.csv 10003
+echo 4,,,,,,,,,,00:00:00,23:59:59,,Message Box,"Last refresh on: `date`",,,,,,,,,,,,,,,, > $ATA_BASE/refresh_files/sil_motd_refresh.csv
+da_load -o $ATA_BASE/refresh_files/sil_motd_refresh.csv 10002
+
+#
+# Reset users and RevPro DB Link (remove PROD entry)
+#
+da_load -o -s $ATA_BASE/refresh_files/dEQX_RevPro_DB.csv dEQX_RevPro_DB
+ksh $ATA_BASE/refresh_files/reset_users.sh
+
+echo "Refresh complete. End time: " `date`
+echo "Latest refresh on: `date`" >  $ATA_HOME/last_refresh.log
+#EOF
+
+fi
+#sh $ATA_BASE/work/jenkins/bin/jenkins_slave_start.ksh
+#sh $ATA_BASE/work/jenkins/bin/jenkins_slave_start.sh
+#
+#       End (of eqx_auto_refresh.sh)
+#

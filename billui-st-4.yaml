@@ -1,0 +1,195 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "6"
+    field.cattle.io/publicEndpoints: '[{"addresses":["10.249.40.58"],"port":30011,"protocol":"TCP","serviceName":"billui:billui-st-4","allNodes":true},{"addresses":["10.249.40.58"],"port":30012,"protocol":"TCP","serviceName":"billui:billui-st-4","allNodes":true}]'
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"appname":"billui","env":"st-4"},"name":"billui-st-4","namespace":"billui"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"billui-st-4","appname":"billui","env":"st-4"}},"strategy":{"rollingUpdate":{"maxSurge":1,"maxUnavailable":0}},"template":{"metadata":{"labels":{"app":"billui-st-4","appname":"billui","env":"st-4"}},"spec":{"containers":[{"args":["-Dspring.profiles.active=st4","-Dspring.config.location=classpath:./,file:./back-end-v2/billui-config/,file:./back-end-v2/billui-config/default.properties,file:./back-end-v2/billui-config/,file:./back-end-v2/billui-config/st4/,file:./back-end-v2/billui-config/st4/env.properties","-Djavax.net.ssl.trustStore=./back-end-v2/billui-config/st4/singleviewkeystore_st4.jks","./back-end-v2/billui-main-app/target/billui-main-app-2.0.0-SNAPSHOT.jar"],"image":"vmclxnexusp01.corp.equinix.com:8002/billuidev/billingui:1.0.0.1426","imagePullPolicy":"IfNotPresent","name":"billui-st-4","ports":[{"containerPort":8080},{"containerPort":8009}]}],"imagePullSecrets":[{"name":"regcred"}]}}}}
+  creationTimestamp: "2024-01-04T17:30:18Z"
+  generation: 19
+  labels:
+    appname: billui
+    env: st-4
+  managedFields:
+  - apiVersion: apps/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:kubectl.kubernetes.io/last-applied-configuration: {}
+        f:labels:
+          .: {}
+          f:appname: {}
+          f:env: {}
+      f:spec:
+        f:progressDeadlineSeconds: {}
+        f:replicas: {}
+        f:revisionHistoryLimit: {}
+        f:selector: {}
+        f:strategy:
+          f:rollingUpdate:
+            .: {}
+            f:maxSurge: {}
+            f:maxUnavailable: {}
+          f:type: {}
+        f:template:
+          f:metadata:
+            f:labels:
+              .: {}
+              f:app: {}
+              f:appname: {}
+              f:env: {}
+          f:spec:
+            f:containers:
+              k:{"name":"billui-st-4"}:
+                .: {}
+                f:args: {}
+                f:image: {}
+                f:imagePullPolicy: {}
+                f:name: {}
+                f:ports:
+                  .: {}
+                  k:{"containerPort":8009,"protocol":"TCP"}:
+                    .: {}
+                    f:containerPort: {}
+                    f:protocol: {}
+                  k:{"containerPort":8080,"protocol":"TCP"}:
+                    .: {}
+                    f:containerPort: {}
+                    f:protocol: {}
+                f:resources: {}
+                f:terminationMessagePath: {}
+                f:terminationMessagePolicy: {}
+            f:dnsPolicy: {}
+            f:imagePullSecrets:
+              .: {}
+              k:{"name":"regcred"}: {}
+            f:restartPolicy: {}
+            f:schedulerName: {}
+            f:securityContext: {}
+            f:terminationGracePeriodSeconds: {}
+    manager: kubectl
+    operation: Update
+    time: "2024-01-04T17:30:18Z"
+  - apiVersion: apps/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          f:field.cattle.io/publicEndpoints: {}
+      f:spec:
+        f:template:
+          f:metadata:
+            f:annotations:
+              .: {}
+              f:cattle.io/timestamp: {}
+    manager: agent
+    operation: Update
+    time: "2024-02-22T09:29:33Z"
+  - apiVersion: apps/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          f:deployment.kubernetes.io/revision: {}
+      f:status:
+        f:availableReplicas: {}
+        f:conditions:
+          .: {}
+          k:{"type":"Available"}:
+            .: {}
+            f:lastTransitionTime: {}
+            f:lastUpdateTime: {}
+            f:message: {}
+            f:reason: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Progressing"}:
+            .: {}
+            f:lastTransitionTime: {}
+            f:lastUpdateTime: {}
+            f:message: {}
+            f:reason: {}
+            f:status: {}
+            f:type: {}
+        f:observedGeneration: {}
+        f:readyReplicas: {}
+        f:replicas: {}
+        f:updatedReplicas: {}
+    manager: kube-controller-manager
+    operation: Update
+    subresource: status
+    time: "2024-02-23T09:29:47Z"
+  name: billui-st-4
+  namespace: billui
+  resourceVersion: "10123417"
+  uid: bf28977c-271a-4625-9110-ea5008c78c30
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: billui-st-4
+      appname: billui
+      env: st-4
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        cattle.io/timestamp: "2024-02-22T09:29:33Z"
+      creationTimestamp: null
+      labels:
+        app: billui-st-4
+        appname: billui
+        env: st-4
+    spec:
+      containers:
+      - args:
+        - -Dspring.profiles.active=st4
+        - -Dspring.config.location=classpath:./,file:./back-end-v2/billui-config/,file:./back-end-v2/billui-config/default.properties,file:./back-end-v2/billui-config/,file:./back-end-v2/billui-config/st4/,file:./back-end-v2/billui-config/st4/env.properties
+        - -Djavax.net.ssl.trustStore=./back-end-v2/billui-config/st4/singleviewkeystore_st4.jks
+        - ./back-end-v2/billui-main-app/target/billui-main-app-2.0.0-SNAPSHOT.jar
+        image: vmclxnexusp01.corp.equinix.com:8002/billuidev/billingui:1.0.0.1426
+        imagePullPolicy: IfNotPresent
+        name: billui-st-4
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 8009
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2024-01-04T17:30:18Z"
+    lastUpdateTime: "2024-02-23T08:51:57Z"
+    message: ReplicaSet "billui-st-4-848d748d9d" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  - lastTransitionTime: "2024-02-23T09:29:47Z"
+    lastUpdateTime: "2024-02-23T09:29:47Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  observedGeneration: 19
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

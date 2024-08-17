@@ -1,0 +1,801 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      field.cattle.io/publicEndpoints: '[{"addresses":["10.249.36.177"],"port":30019,"protocol":"TCP","serviceName":"billui:billui-uat-1","allNodes":true},{"addresses":["10.249.36.177"],"port":30020,"protocol":"TCP","serviceName":"billui:billui-uat-1","allNodes":true}]'
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"appname":"billui","env":"uat-1"},"name":"billui-uat-1","namespace":"billui"},"spec":{"ports":[{"name":"http","nodePort":30019,"port":8080,"protocol":"TCP","targetPort":8080},{"name":"ajp","nodePort":30020,"port":8009,"protocol":"TCP","targetPort":8009}],"selector":{"app":"billui-uat-1","appname":"billui","env":"uat-1"},"sessionAffinity":"ClientIP","type":"NodePort"}}
+    creationTimestamp: "2021-11-23T11:52:35Z"
+    labels:
+      appname: billui
+      env: uat-1
+    managedFields:
+    - apiVersion: v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:kubectl.kubernetes.io/last-applied-configuration: {}
+          f:labels:
+            .: {}
+            f:appname: {}
+            f:env: {}
+        f:spec:
+          f:externalTrafficPolicy: {}
+          f:ports:
+            .: {}
+            k:{"port":8009,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:nodePort: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+            k:{"port":8080,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:nodePort: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+          f:selector:
+            .: {}
+            f:app: {}
+            f:appname: {}
+            f:env: {}
+          f:type: {}
+      manager: kubectl-client-side-apply
+      operation: Update
+      time: "2021-11-23T11:52:35Z"
+    - apiVersion: v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            f:field.cattle.io/publicEndpoints: {}
+      manager: rancher
+      operation: Update
+      time: "2021-11-23T11:52:35Z"
+    - apiVersion: v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:spec:
+          f:sessionAffinity: {}
+          f:sessionAffinityConfig:
+            .: {}
+            f:clientIP:
+              .: {}
+              f:timeoutSeconds: {}
+      manager: agent
+      operation: Update
+      time: "2021-11-24T06:43:43Z"
+    name: billui-uat-1
+    namespace: billui
+    resourceVersion: "193030158"
+    selfLink: /api/v1/namespaces/billui/services/billui-uat-1
+    uid: 258035b4-5145-4302-aa97-825223a20dde
+  spec:
+    clusterIP: 10.43.164.193
+    externalTrafficPolicy: Cluster
+    ports:
+    - name: http
+      nodePort: 30019
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: ajp
+      nodePort: 30020
+      port: 8009
+      protocol: TCP
+      targetPort: 8009
+    selector:
+      app: billui-uat-1
+      appname: billui
+      env: uat-1
+    sessionAffinity: ClientIP
+    sessionAffinityConfig:
+      clientIP:
+        timeoutSeconds: 10800
+    type: NodePort
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"app":"redis-uat-1","appname":"billui","env":"uat-1"},"name":"redis-uat-1","namespace":"billui"},"spec":{"ports":[{"port":6379,"protocol":"TCP","targetPort":6379}],"selector":{"app":"redis-uat-1","appname":"billui","env":"uat-1"},"type":"ClusterIP"}}
+    creationTimestamp: "2022-01-03T13:06:41Z"
+    labels:
+      app: redis-uat-1
+      appname: billui
+      env: uat-1
+    managedFields:
+    - apiVersion: v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:kubectl.kubernetes.io/last-applied-configuration: {}
+          f:labels:
+            .: {}
+            f:app: {}
+            f:appname: {}
+            f:env: {}
+        f:spec:
+          f:ports:
+            .: {}
+            k:{"port":6379,"protocol":"TCP"}:
+              .: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+          f:selector:
+            .: {}
+            f:app: {}
+            f:appname: {}
+            f:env: {}
+          f:sessionAffinity: {}
+          f:type: {}
+      manager: kubectl-client-side-apply
+      operation: Update
+      time: "2022-01-03T13:06:41Z"
+    name: redis-uat-1
+    namespace: billui
+    resourceVersion: "20583306"
+    selfLink: /api/v1/namespaces/billui/services/redis-uat-1
+    uid: 58201096-52a1-4d28-991c-9444b7efea82
+  spec:
+    clusterIP: 10.43.96.252
+    ports:
+    - port: 6379
+      protocol: TCP
+      targetPort: 6379
+    selector:
+      app: redis-uat-1
+      appname: billui
+      env: uat-1
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"app":"redis-uat-dr","appname":"billui","env":"uat-dr"},"name":"redis-uat-dr","namespace":"billui"},"spec":{"ports":[{"port":6379,"protocol":"TCP","targetPort":6379}],"selector":{"app":"redis-uat-dr","appname":"billui","env":"uat-dr"},"type":"ClusterIP"}}
+    creationTimestamp: "2022-04-20T11:28:00Z"
+    labels:
+      app: redis-uat-dr
+      appname: billui
+      env: uat-dr
+    managedFields:
+    - apiVersion: v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:kubectl.kubernetes.io/last-applied-configuration: {}
+          f:labels:
+            .: {}
+            f:app: {}
+            f:appname: {}
+            f:env: {}
+        f:spec:
+          f:ports:
+            .: {}
+            k:{"port":6379,"protocol":"TCP"}:
+              .: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+          f:selector:
+            .: {}
+            f:app: {}
+            f:appname: {}
+            f:env: {}
+          f:sessionAffinity: {}
+          f:type: {}
+      manager: kubectl-client-side-apply
+      operation: Update
+      time: "2022-04-20T11:28:00Z"
+    name: redis-uat-dr
+    namespace: billui
+    resourceVersion: "61462981"
+    selfLink: /api/v1/namespaces/billui/services/redis-uat-dr
+    uid: c05852e0-b86b-4360-aed6-e7093ef547bf
+  spec:
+    clusterIP: 10.43.136.26
+    ports:
+    - port: 6379
+      protocol: TCP
+      targetPort: 6379
+    selector:
+      app: redis-uat-dr
+      appname: billui
+      env: uat-dr
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  data:
+    redis-config: |-
+      maxmemory 1Gb
+      maxmemory-policy allkeys-lru
+      appendonly yes
+      appendfsync everysec
+      bind 0.0.0.0
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"redis-config":"maxmemory 1Gb\nmaxmemory-policy allkeys-lru\nappendonly yes\nappendfsync everysec\nbind 0.0.0.0"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app":"redis-uat-1","env":"uat-1"},"name":"redis-uat-1-466gh6hc6m","namespace":"billui"}}
+    creationTimestamp: "2021-11-08T10:26:37Z"
+    labels:
+      app: redis-uat-1
+      env: uat-1
+    managedFields:
+    - apiVersion: v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:data:
+          .: {}
+          f:redis-config: {}
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:kubectl.kubernetes.io/last-applied-configuration: {}
+          f:labels:
+            .: {}
+            f:app: {}
+            f:env: {}
+      manager: kubectl-client-side-apply
+      operation: Update
+      time: "2021-11-08T10:26:37Z"
+    name: redis-uat-1-466gh6hc6m
+    namespace: billui
+    resourceVersion: "17050"
+    selfLink: /api/v1/namespaces/billui/configmaps/redis-uat-1-466gh6hc6m
+    uid: 491148bd-2135-41b6-a2cd-4dd46b1c699e
+- apiVersion: v1
+  data:
+    redis-config: |-
+      maxmemory 1Gb
+      maxmemory-policy allkeys-lru
+      appendonly yes
+      appendfsync everysec
+      bind 0.0.0.0
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"redis-config":"maxmemory 1Gb\nmaxmemory-policy allkeys-lru\nappendonly yes\nappendfsync everysec\nbind 0.0.0.0"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app":"redis-uat-dr","env":"uat-dr"},"name":"redis-uat-dr-466gh6hc6m","namespace":"billui"}}
+    creationTimestamp: "2022-04-20T11:28:00Z"
+    labels:
+      app: redis-uat-dr
+      env: uat-dr
+    managedFields:
+    - apiVersion: v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:data:
+          .: {}
+          f:redis-config: {}
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:kubectl.kubernetes.io/last-applied-configuration: {}
+          f:labels:
+            .: {}
+            f:app: {}
+            f:env: {}
+      manager: kubectl-client-side-apply
+      operation: Update
+      time: "2022-04-20T11:28:00Z"
+    name: redis-uat-dr-466gh6hc6m
+    namespace: billui
+    resourceVersion: "61462979"
+    selfLink: /api/v1/namespaces/billui/configmaps/redis-uat-dr-466gh6hc6m
+    uid: d495c674-b1bf-47d1-b0ef-ad7a5c76131a
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "74"
+      field.cattle.io/publicEndpoints: '[{"addresses":["10.249.36.177"],"port":30019,"protocol":"TCP","serviceName":"billui:billui-uat-1","allNodes":true},{"addresses":["10.249.36.177"],"port":30020,"protocol":"TCP","serviceName":"billui:billui-uat-1","allNodes":true}]'
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"appname":"billui","env":"uat-1"},"name":"billui-uat-1","namespace":"billui"},"spec":{"replicas":4,"selector":{"matchLabels":{"app":"billui-uat-1","appname":"billui","env":"uat-1"}},"strategy":{"rollingUpdate":{"maxSurge":1,"maxUnavailable":0}},"template":{"metadata":{"labels":{"app":"billui-uat-1","appname":"billui","env":"uat-1"}},"spec":{"containers":[{"args":["-Dspring.profiles.active=uat1","-Dspring.config.location=classpath:./back-end-v2/,file:./back-end-v2/billui-config/,file:./back-end-v2/billui-config/default.properties,file:./back-end-v2/billui-config/,file:./back-end-v2/billui-config/uat1/,file:./back-end-v2/billui-config/uat1/env.properties","-Djavax.net.ssl.trustStore=./back-end-v2/billui-config/uat1/singleviewkeystore_uat1.jks","./back-end-v2/billui-main-app/target/billui-main-app-2.0.0-SNAPSHOT.jar"],"env":[{"name":"POD_NAME","valueFrom":{"fieldRef":{"fieldPath":"metadata.name"}}}],"image":"vmclxnexusp01.corp.equinix.com:8002/billuidev/billingui:1.0.0.1381","imagePullPolicy":"IfNotPresent","name":"billui-uat-1","ports":[{"containerPort":8080},{"containerPort":8009}]}],"imagePullSecrets":[{"name":"regcred"}]}}}}
+    creationTimestamp: "2021-11-23T11:52:35Z"
+    generation: 176
+    labels:
+      appname: billui
+      env: uat-1
+    managedFields:
+    - apiVersion: apps/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations: {}
+          f:labels:
+            .: {}
+            f:appname: {}
+            f:env: {}
+        f:spec:
+          f:progressDeadlineSeconds: {}
+          f:replicas: {}
+          f:revisionHistoryLimit: {}
+          f:selector:
+            f:matchLabels:
+              .: {}
+              f:app: {}
+              f:appname: {}
+              f:env: {}
+          f:strategy:
+            f:rollingUpdate:
+              .: {}
+              f:maxSurge: {}
+              f:maxUnavailable: {}
+            f:type: {}
+          f:template:
+            f:metadata:
+              f:labels:
+                .: {}
+                f:app: {}
+                f:appname: {}
+                f:env: {}
+            f:spec:
+              f:containers:
+                k:{"name":"billui-uat-1"}:
+                  .: {}
+                  f:env:
+                    .: {}
+                    k:{"name":"POD_NAME"}:
+                      .: {}
+                      f:name: {}
+                      f:valueFrom:
+                        .: {}
+                        f:fieldRef:
+                          .: {}
+                          f:apiVersion: {}
+                          f:fieldPath: {}
+                  f:imagePullPolicy: {}
+                  f:name: {}
+                  f:ports:
+                    .: {}
+                    k:{"containerPort":8009,"protocol":"TCP"}:
+                      .: {}
+                      f:containerPort: {}
+                      f:protocol: {}
+                    k:{"containerPort":8080,"protocol":"TCP"}:
+                      .: {}
+                      f:containerPort: {}
+                      f:protocol: {}
+                  f:resources: {}
+                  f:terminationMessagePath: {}
+                  f:terminationMessagePolicy: {}
+              f:dnsPolicy: {}
+              f:imagePullSecrets:
+                .: {}
+                k:{"name":"regcred"}:
+                  .: {}
+                  f:name: {}
+              f:restartPolicy: {}
+              f:schedulerName: {}
+              f:securityContext: {}
+              f:terminationGracePeriodSeconds: {}
+      manager: kubectl-client-side-apply
+      operation: Update
+      time: "2021-11-24T08:55:33Z"
+    - apiVersion: apps/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            f:field.cattle.io/publicEndpoints: {}
+        f:spec:
+          f:template:
+            f:metadata:
+              f:annotations:
+                .: {}
+                f:field.cattle.io/ports: {}
+                f:field.cattle.io/publicEndpoints: {}
+            f:spec:
+              f:containers:
+                k:{"name":"billui-uat-1"}:
+                  f:ports:
+                    k:{"containerPort":8009,"protocol":"TCP"}:
+                      f:name: {}
+                    k:{"containerPort":8080,"protocol":"TCP"}:
+                      f:name: {}
+      manager: rancher
+      operation: Update
+      time: "2022-11-07T16:02:39Z"
+    - apiVersion: apps/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:spec:
+          f:template:
+            f:metadata:
+              f:annotations:
+                f:cattle.io/timestamp: {}
+      manager: agent
+      operation: Update
+      time: "2022-11-08T01:45:43Z"
+    - apiVersion: apps/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            f:kubectl.kubernetes.io/last-applied-configuration: {}
+        f:spec:
+          f:template:
+            f:spec:
+              f:containers:
+                k:{"name":"billui-uat-1"}:
+                  f:args: {}
+                  f:image: {}
+      manager: kubectl
+      operation: Update
+      time: "2023-10-05T02:33:43Z"
+    - apiVersion: apps/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            f:deployment.kubernetes.io/revision: {}
+        f:status:
+          f:availableReplicas: {}
+          f:conditions:
+            .: {}
+            k:{"type":"Available"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:lastUpdateTime: {}
+              f:message: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+            k:{"type":"Progressing"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:lastUpdateTime: {}
+              f:message: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+          f:observedGeneration: {}
+          f:readyReplicas: {}
+          f:replicas: {}
+          f:unavailableReplicas: {}
+          f:updatedReplicas: {}
+      manager: kube-controller-manager
+      operation: Update
+      time: "2024-01-03T02:01:22Z"
+    name: billui-uat-1
+    namespace: billui
+    resourceVersion: "282042726"
+    selfLink: /apis/apps/v1/namespaces/billui/deployments/billui-uat-1
+    uid: 99573a05-f053-441b-9a48-5248e7b23f26
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 4
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: billui-uat-1
+        appname: billui
+        env: uat-1
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 0
+      type: RollingUpdate
+    template:
+      metadata:
+        annotations:
+          cattle.io/timestamp: "2023-11-02T03:04:19Z"
+          field.cattle.io/ports: '[[{"containerPort":8080,"dnsName":"billui-uat-1","kind":"ClusterIP","name":"8080tcp2","protocol":"TCP"},{"containerPort":8009,"dnsName":"billui-uat-1","kind":"ClusterIP","name":"8009tcp2","protocol":"TCP"}]]'
+          field.cattle.io/publicEndpoints: '[{"addresses":["10.249.36.177"],"allNodes":true,"port":30019,"protocol":"TCP","serviceId":"billui:billui-uat-1"},{"addresses":["10.249.36.177"],"allNodes":true,"port":30020,"protocol":"TCP","serviceId":"billui:billui-uat-1"}]'
+        creationTimestamp: null
+        labels:
+          app: billui-uat-1
+          appname: billui
+          env: uat-1
+      spec:
+        containers:
+        - args:
+          - -Dspring.profiles.active=uat1
+          - -Dspring.config.location=classpath:./back-end-v2/,file:./back-end-v2/billui-config/,file:./back-end-v2/billui-config/default.properties,file:./back-end-v2/billui-config/,file:./back-end-v2/billui-config/uat1/,file:./back-end-v2/billui-config/uat1/env.properties
+          - -Djavax.net.ssl.trustStore=./back-end-v2/billui-config/uat1/singleviewkeystore_uat1.jks
+          - ./back-end-v2/billui-main-app/target/billui-main-app-2.0.0-SNAPSHOT.jar
+          env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          image: vmclxnexusp01.corp.equinix.com:8002/billuidev/billingui:1.0.0.1381
+          imagePullPolicy: IfNotPresent
+          name: billui-uat-1
+          ports:
+          - containerPort: 8080
+            name: 8080tcp2
+            protocol: TCP
+          - containerPort: 8009
+            name: 8009tcp2
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        imagePullSecrets:
+        - name: regcred
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+  status:
+    availableReplicas: 3
+    conditions:
+    - lastTransitionTime: "2021-11-23T11:52:35Z"
+      lastUpdateTime: "2023-12-19T14:46:21Z"
+      message: ReplicaSet "billui-uat-1-54c5c5ccd5" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    - lastTransitionTime: "2024-01-03T02:01:22Z"
+      lastUpdateTime: "2024-01-03T02:01:22Z"
+      message: Deployment does not have minimum availability.
+      reason: MinimumReplicasUnavailable
+      status: "False"
+      type: Available
+    observedGeneration: 176
+    readyReplicas: 3
+    replicas: 4
+    unavailableReplicas: 1
+    updatedReplicas: 4
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "1"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"redis-uat-1","appname":"billui","env":"uat-1"},"name":"redis-uat-1","namespace":"billui"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"redis-uat-1","appname":"billui","env":"uat-1"}},"template":{"metadata":{"labels":{"app":"redis-uat-1","appname":"billui","env":"uat-1","version":"5.0.4"}},"spec":{"containers":[{"command":["redis-server","/redis-master/redis.conf"],"env":[{"name":"MASTER","value":"true"}],"image":"public.ecr.aws/ubuntu/redis:latest","name":"redis","ports":[{"containerPort":6379,"name":"http"}],"resources":{"limits":{"cpu":"0.1"}},"volumeMounts":[{"mountPath":"/data","name":"redis-data"},{"mountPath":"/redis-master","name":"config"}]}],"securityContext":{"fsGroup":0,"runAsUser":0},"volumes":[{"name":"redis-data","persistentVolumeClaim":{"claimName":"redis-uat-1"}},{"configMap":{"items":[{"key":"redis-config","path":"redis.conf"}],"name":"redis-uat-1-466gh6hc6m"},"name":"config"}]}}}}
+    creationTimestamp: "2023-10-27T03:36:49Z"
+    generation: 1
+    labels:
+      app: redis-uat-1
+      appname: billui
+      env: uat-1
+    managedFields:
+    - apiVersion: apps/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:kubectl.kubernetes.io/last-applied-configuration: {}
+          f:labels:
+            .: {}
+            f:app: {}
+            f:appname: {}
+            f:env: {}
+        f:spec:
+          f:progressDeadlineSeconds: {}
+          f:replicas: {}
+          f:revisionHistoryLimit: {}
+          f:selector:
+            f:matchLabels:
+              .: {}
+              f:app: {}
+              f:appname: {}
+              f:env: {}
+          f:strategy:
+            f:rollingUpdate:
+              .: {}
+              f:maxSurge: {}
+              f:maxUnavailable: {}
+            f:type: {}
+          f:template:
+            f:metadata:
+              f:labels:
+                .: {}
+                f:app: {}
+                f:appname: {}
+                f:env: {}
+                f:version: {}
+            f:spec:
+              f:containers:
+                k:{"name":"redis"}:
+                  .: {}
+                  f:command: {}
+                  f:env:
+                    .: {}
+                    k:{"name":"MASTER"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                  f:image: {}
+                  f:imagePullPolicy: {}
+                  f:name: {}
+                  f:ports:
+                    .: {}
+                    k:{"containerPort":6379,"protocol":"TCP"}:
+                      .: {}
+                      f:containerPort: {}
+                      f:name: {}
+                      f:protocol: {}
+                  f:resources:
+                    .: {}
+                    f:limits:
+                      .: {}
+                      f:cpu: {}
+                  f:terminationMessagePath: {}
+                  f:terminationMessagePolicy: {}
+                  f:volumeMounts:
+                    .: {}
+                    k:{"mountPath":"/data"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                    k:{"mountPath":"/redis-master"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+              f:dnsPolicy: {}
+              f:restartPolicy: {}
+              f:schedulerName: {}
+              f:securityContext:
+                .: {}
+                f:fsGroup: {}
+                f:runAsUser: {}
+              f:terminationGracePeriodSeconds: {}
+              f:volumes:
+                .: {}
+                k:{"name":"config"}:
+                  .: {}
+                  f:configMap:
+                    .: {}
+                    f:defaultMode: {}
+                    f:items: {}
+                    f:name: {}
+                  f:name: {}
+                k:{"name":"redis-data"}:
+                  .: {}
+                  f:name: {}
+                  f:persistentVolumeClaim:
+                    .: {}
+                    f:claimName: {}
+      manager: kubectl
+      operation: Update
+      time: "2023-10-27T03:36:49Z"
+    - apiVersion: apps/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            f:deployment.kubernetes.io/revision: {}
+        f:status:
+          f:availableReplicas: {}
+          f:conditions:
+            .: {}
+            k:{"type":"Available"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:lastUpdateTime: {}
+              f:message: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+            k:{"type":"Progressing"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:lastUpdateTime: {}
+              f:message: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+          f:observedGeneration: {}
+          f:readyReplicas: {}
+          f:replicas: {}
+          f:updatedReplicas: {}
+      manager: kube-controller-manager
+      operation: Update
+      time: "2024-01-03T04:12:46Z"
+    name: redis-uat-1
+    namespace: billui
+    resourceVersion: "282042600"
+    selfLink: /apis/apps/v1/namespaces/billui/deployments/redis-uat-1
+    uid: 548f8d77-e6ac-4165-9a21-c324d56fa8e3
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: redis-uat-1
+        appname: billui
+        env: uat-1
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: redis-uat-1
+          appname: billui
+          env: uat-1
+          version: 5.0.4
+      spec:
+        containers:
+        - command:
+          - redis-server
+          - /redis-master/redis.conf
+          env:
+          - name: MASTER
+            value: "true"
+          image: public.ecr.aws/ubuntu/redis:latest
+          imagePullPolicy: Always
+          name: redis
+          ports:
+          - containerPort: 6379
+            name: http
+            protocol: TCP
+          resources:
+            limits:
+              cpu: 100m
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /data
+            name: redis-data
+          - mountPath: /redis-master
+            name: config
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          fsGroup: 0
+          runAsUser: 0
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: redis-uat-1
+        - configMap:
+            defaultMode: 420
+            items:
+            - key: redis-config
+              path: redis.conf
+            name: redis-uat-1-466gh6hc6m
+          name: config
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2023-10-27T03:36:50Z"
+      lastUpdateTime: "2023-10-27T03:37:03Z"
+      message: ReplicaSet "redis-uat-1-6fb69d545c" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    - lastTransitionTime: "2024-01-03T04:12:46Z"
+      lastUpdateTime: "2024-01-03T04:12:46Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    observedGeneration: 1
+    readyReplicas: 1
+    replicas: 1
+    updatedReplicas: 1
+kind: List
